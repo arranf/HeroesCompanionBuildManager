@@ -8,11 +8,15 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 import App from './App'
 import router from './router'
 import store from './store'
+import keyStore from './key-store'
 
 Vue.use(BootstrapVue)
 
+/* Other Code */
+
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios
+Vue.prototype.$key = keyStore
 Vue.config.productionTip = false
 
 /* eslint-disable no-new */

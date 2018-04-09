@@ -1,35 +1,36 @@
 <template>
-  <div>
+  <div style="margin: 3em;">
+
+    <div v-if="loading" style="height: 80vh;" class="d-flex align-items-center justify-content-center" >
+       <div class="loader">
+         <div id="largeBox"></div>
+         <div id="smallBox"></div>
+       </div>
+    </div>
     <!-- hero, tagline, talents, source, description, url -->
-    <b-form @submit="onSubmit" @reset="onReset" >
+    <b-form v-else @submit="onSubmit" @reset="onReset" >
       <b-form-group id="hero"
                     label="Hero"
                     label-for="hero">
         <b-form-select
-                      :options="heroes"
+                      :options="heroOptions"
                       required
                       v-model="hero">
         </b-form-select>
       </b-form-group>
 
-      <!-- Talents -->
-      <!-- <v-for level in [1, 4, 7, 10, 13, 16, 20]>
-        <b-form-group label="Using <code>options</code> array:">
-           <b-form-radio-group id="radios1" v-model="selected" :options="options" name="radioOpenions">
-           </b-form-radio-group>
-        </b-form-group>
-      </v-for> -->
-      
-      <!-- <b-form-group id="exampleInputGroup3"
-                    label="Food:"
-                    label-for="exampleInput3">
-        <b-form-select id="exampleInput3"
-                      :options="foods"
-                      required
-                      v-model="form.food">
-        </b-form-select>
-      </b-form-group> -->
+      <div v-if="hero">
+        <!-- Talents -->
+        <template v-for="level in levels">
+          <b-form-group :label="`Level ${level}`" :key="level">
+            <b-form-radio-group :id="'radio_level_'+level" v-model="chosenTalents[level]" 
+                :options="talentOptions(level)" :name="'radio_level_'+level" required>
+            </b-form-radio-group>
+          </b-form-group>
+        </template>
+      </div>
 
+      <!-- tagline -->
       <b-form-group id="taglineGroup"
                     label="Tagline"
                     label-for="tagline"
@@ -41,6 +42,7 @@
         </b-form-input>
       </b-form-group>
 
+      <!-- description -->
       <b-form-group id="descriptionGroup"
                     label="Description"
                     label-for="description">
@@ -70,8 +72,7 @@
                     description="If the build is from the internet, then provide a link.">
         <b-form-input id="url"
                       type="url"
-                      v-model="url"
-                      required>
+                      v-model="url">
         </b-form-input>
       </b-form-group>
 
@@ -82,26 +83,119 @@
 </template>
 
 <script>
+  import {mapActions, mapGetters} from 'vuex'
   export default {
     name: 'home',
     components: { },
     data () {
       return {
-        name: 'Arran',
+        name: 'Create Build',
         heroes: [],
         hero: null,
         tagline: '',
         source: '',
         url: '',
-        description: ''
+        description: '',
+        chosenTalents: {},
+        levels: [1, 4, 7, 10, 13, 16, 20],
+        loading: false
       }
     },
     methods: {
-      open (link) {
-        this.$electron.shell.openExternal(link)
+      ...mapActions(['fetchHeroes']),
+      talentOptions (level) {
+        return this.getTalentsByHeroIdAndLevel(this.hero, level).map(t => ({value: t.TalentTreeId, text: t.Name}))
       },
-      onSubmit () {},
+      onSubmit () {
+        let build = {
+          HeroId: this.hero,
+          Tagline: this.tagline,
+          Source: this.source,
+          Talents: []
+        }
+        Object.keys(this.chosenTalents).forEach(function (key) {
+          build.Talents.push(this.chosenTalents[key])
+        })
+
+        // VALIDATION
+
+        this.$http.post('https://data.heroescompanion.com/v1/builds', build)
+          .then(function (response) {
+            console.log(response)
+          })
+          .catch(function (error) {
+            console.error(error)
+          })
+      },
       onReset () {}
+    },
+    computed: {
+      ...mapGetters(['getHeroes', 'getTalentsByHeroIdAndLevel']),
+      heroOptions () {
+        if (this.getHeroes) {
+          return this.getHeroes.map(h => ({value: h.HeroId, text: h.Name}))
+        }
+        return []
+      }
+    },
+    created () {
+      this.loading = true
+      this.fetchHeroes()
+        .then(() => { this.loading = false })
     }
   }
 </script>
+
+
+<style scoped >
+body {
+  background-color: #34495e;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+}
+
+.loader {
+  width: 12em;
+  height: 12em;
+  animation: loaderAnim 1.25s infinite ease-in-out;
+  outline: 1px solid transparent;
+}
+.loader #largeBox {
+  height: 12em;
+  width: 12em;
+  background-color: #ECECEC;
+  outline: 1px solid transparent;
+  position: fixed;
+}
+.loader #smallBox {
+  height: 12em;
+  width: 12em;
+  background-color: #34495e;
+  position: fixed;
+  z-index: 1;
+  outline: 1px solid transparent;
+  animation: smallBoxAnim 1.25s alternate infinite ease-in-out;
+}
+
+@keyframes smallBoxAnim {
+  0% {
+    transform: scale(0.2);
+  }
+  100% {
+    transform: scale(0.75);
+  }
+}
+@keyframes loaderAnim {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+</style>
