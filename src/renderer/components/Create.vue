@@ -106,18 +106,20 @@
       talentOptions (level) {
         return this.getTalentsByHeroIdAndLevel(this.hero, level).map(t => ({value: t.TalentTreeId, text: t.Name}))
       },
-      onSubmit () {
+      onSubmit (evt) {
+        evt.preventDefault()
         let build = {
           HeroId: this.hero,
           Tagline: this.tagline,
           Source: this.source,
           Talents: []
         }
-        Object.keys(this.chosenTalents).forEach(function (key) {
-          build.Talents.push(this.chosenTalents[key])
+        let chosenTalents = this.chosenTalents
+        Object.keys(chosenTalents).forEach(function (key) {
+          build.Talents.push(({TalentTreeId: chosenTalents[key]}))
         })
 
-        // VALIDATION
+        // TODO VALIDATION
 
         this.$http.post('https://data.heroescompanion.com/v1/builds', build)
           .then(function (response) {
