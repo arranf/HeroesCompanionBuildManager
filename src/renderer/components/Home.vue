@@ -1,22 +1,28 @@
 <template>
   <div>
-    <b-alert show> Hello {{ name }}! </b-alert>
+     <b-form-input v-model="keyValue" type="text" placeholder="Secret Key"></b-form-input>
+     <b-button @click.prevent="setKey">Update</b-button>
   </div>
 </template>
 
 <script>
   export default {
     name: 'home',
-    components: { },
     data () {
       return {
-        name: 'Arran'
+        keyValue: ''
       }
     },
     methods: {
-      open (link) {
-        this.$electron.shell.openExternal(link)
+      setKey () {
+        this.$http.defaults.headers.common['Authorization'] = this.keyValue
+        return this.$key.setKey(this.keyValue)
       }
+    },
+    created () {
+      this.$key.getKey().then(val => {
+        this.keyValue = val
+      })
     }
   }
 </script>

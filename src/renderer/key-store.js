@@ -31,7 +31,12 @@ export default {
         if (err) {
           reject(err)
         }
-        resolve(data)
+
+        if (data !== 'undefined' && data) {
+          resolve(data)
+        } else {
+          resolve('')
+        }
       })
     })
   }
